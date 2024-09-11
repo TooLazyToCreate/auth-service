@@ -2,10 +2,12 @@ package app
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"net/smtp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/TooLazyToCreate/auth-service/config"
 	"github.com/TooLazyToCreate/auth-service/internal/repository"
@@ -31,6 +33,20 @@ func Run(logger *zap.Logger, cfg *config.Config) error {
 
 	userRepo := repository.NewUserRepository(logger, db)
 	tokenRepo := repository.NewTokenRepository(logger, db)
+
+	/* Запускаем на фоне горутину с очисткой базы токенов раз в 5 секунд*/
+	tokenClearTicker := time.NewTicker(5 * time.Second)
+	go func() {
+		for {
+			<-tokenClearTicker.C
+			err := tokenRepo.DeleteExpired(time.Unix(time.Now().Unix()-cfg.Lifetime.RefreshToken, 0))
+			if !(err == nil || errors.Is(err, sql.ErrNoRows)) {
+				logger.Error("Failed to delete expired tokens", zap.Error(err))
+			} else {
+				logger.Info("Expired tokens have been deleted")
+			}
+		}
+	}()
 
 	smtpAuth := smtp.PlainAuth("", cfg.Smtp.Login, cfg.Smtp.Password, cfg.Smtp.Host)
 	authService := service.NewAuthService(logger, cfg, &smtpAuth, userRepo, tokenRepo)

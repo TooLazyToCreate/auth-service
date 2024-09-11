@@ -70,7 +70,7 @@ func (service *AuthService) HandleRefresh(w http.ResponseWriter, req *http.Reque
 	}
 
 	/* Получаем все хэши refresh-токенов, выданные на конкретного пользователя */
-	hashes, err := service.tokenRepo.GetByGUID(userGUID)
+	tokenRows, err := service.tokenRepo.GetByGUID(userGUID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -81,22 +81,28 @@ func (service *AuthService) HandleRefresh(w http.ResponseWriter, req *http.Reque
 		}
 		return
 	}
+
+	/* Эта ошибка покажется только в случае, если у пользователя в таблице лежат только токены с вышедшим сроком годности,
+	 * и они совпадает по хэшу (не уверен, что такое возможно). В других случаях будет писаться сообщение от bcrypt`а. */
+	err = errors.New("there are no valid tokens exists for user")
 	/* Если в выдаче есть валидный хэш, удаляем его и выходим из цикла */
-	for _, hash := range hashes {
-		if err = bcrypt.CompareHashAndPassword([]byte(hash), pair.Refresh); err == nil {
-			err := service.tokenRepo.DeleteByHash(hash)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				service.logger.Error("SQL error", zap.Error(err))
-				return
+	for _, tokenRow := range tokenRows {
+		if tokenRow.CreatedAt.Unix()+service.cfg.Lifetime.RefreshToken > time.Now().Unix() {
+			if err = bcrypt.CompareHashAndPassword([]byte(tokenRow.Hash), pair.Refresh); err == nil {
+				err = service.tokenRepo.DeleteByHash(tokenRow.Hash)
+				if err != nil {
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					service.logger.Error("SQL error", zap.Error(err))
+					return
+				}
+				break
 			}
-			break
 		}
 	}
 	/* Этот if запускается только если bcrypt.CompareHashAndPassword вернул error для каждого из хэшей */
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		service.logger.Error("Refresh token hash mismatch", zap.Error(err), zap.String("ip", req.RemoteAddr))
+		service.logger.Error("Refresh token is invalid", zap.Error(err), zap.String("ip", req.RemoteAddr))
 		return
 	}
 	/* Если токены валидны и были выданы, но ip адреса не совпадают,

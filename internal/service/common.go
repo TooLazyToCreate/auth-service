@@ -73,6 +73,7 @@ func (service *AuthService) createTokens(userGUID string, w http.ResponseWriter,
 		return
 	}
 	service.logger.Debug("New tokens were given")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
 }

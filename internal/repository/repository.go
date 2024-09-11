@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/TooLazyToCreate/auth-service/internal/model"
+	"time"
 )
 
 type UserRepository interface {
@@ -13,6 +14,7 @@ type UserRepository interface {
  * 2. Можно использовать команду EXPIRE, чтобы токены сами удалялись. */
 type TokenRepository interface {
 	Create(hash string, userGUID string) error
-	GetByGUID(userGUID string) ([]string, error)
+	GetByGUID(userGUID string) ([]model.Token, error)
 	DeleteByHash(hash string) error
+	DeleteExpired(maxLifeTime time.Time) error
 }
