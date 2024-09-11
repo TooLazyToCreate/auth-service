@@ -2,7 +2,6 @@ package app
 
 import (
 	"database/sql"
-	"errors"
 	"net/http"
 	"net/smtp"
 	"strconv"
@@ -40,10 +39,10 @@ func Run(logger *zap.Logger, cfg *config.Config) error {
 		for {
 			<-tokenClearTicker.C
 			err := tokenRepo.DeleteExpired(time.Unix(time.Now().Unix()-cfg.Lifetime.RefreshToken, 0))
-			if !(err == nil || errors.Is(err, sql.ErrNoRows)) {
-				logger.Error("Failed to delete expired tokens", zap.Error(err))
-			} else {
+			if err == nil {
 				logger.Debug("Expired tokens have been deleted")
+			} else {
+				logger.Error("Failed to delete expired tokens", zap.Error(err))
 			}
 		}
 	}()

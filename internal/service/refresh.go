@@ -37,9 +37,6 @@ func (service *AuthService) HandleRefresh(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	/* TODO добавить столбец времени выпуска в tokens,
-	 * чтоб хоть как-то контролировать рост неиспользованных токенов. */
-
 	/* Получаем данные из access токена, заодно его проверяя */
 	accessTokenPayload, err := pair.AccessTokenPayload(service.cfg.Secret)
 	if err != nil {
@@ -58,10 +55,8 @@ func (service *AuthService) HandleRefresh(w http.ResponseWriter, req *http.Reque
 	}
 
 	/* Получаем GUID пользователя из access токена */
-	var userGUID string
-	if accessTokenPayload["guid"] != nil {
-		userGUID = accessTokenPayload["guid"].(string)
-	} else {
+	userGUID, ok := accessTokenPayload["guid"].(string)
+	if !ok {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		service.logger.Error("Access token does not contain enough data",
 			zap.String("ip", req.RemoteAddr),
@@ -85,10 +80,13 @@ func (service *AuthService) HandleRefresh(w http.ResponseWriter, req *http.Reque
 	/* Эта ошибка покажется только в случае, если у пользователя в таблице лежат только токены с вышедшим сроком годности,
 	 * и они совпадает по хэшу (не уверен, что такое возможно). В других случаях будет писаться сообщение от bcrypt`а. */
 	err = errors.New("there are no valid tokens exists for user")
-	/* Если в выдаче есть валидный хэш, удаляем его и выходим из цикла */
+	/* Проверяем выборку из хэшей и надеемся выйти без ошибки из цикла */
 	for _, tokenRow := range tokenRows {
+		/* Сборщик токенов всегда будет запаздывать, поэтому проверяем дополнительно время создания. */
 		if tokenRow.CreatedAt.Unix()+service.cfg.Lifetime.RefreshToken > time.Now().Unix() {
-			if err = bcrypt.CompareHashAndPassword([]byte(tokenRow.Hash), pair.Refresh); err == nil {
+			/* Если в выдаче есть валидный хэш, удаляем его и выходим из цикла */
+			err = bcrypt.CompareHashAndPassword([]byte(tokenRow.Hash), pair.Refresh)
+			if err == nil {
 				err = service.tokenRepo.DeleteByHash(tokenRow.Hash)
 				if err != nil {
 					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

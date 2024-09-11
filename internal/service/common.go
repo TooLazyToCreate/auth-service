@@ -30,8 +30,8 @@ func NewAuthService(logger *zap.Logger, cfg *config.Config, smtpAuth *smtp.Auth,
 }
 
 func (service *AuthService) createTokens(userGUID string, w http.ResponseWriter, req *http.Request) {
-	/* В access токене содержится guid пользователя и ip-адрес;
-	 * В refresh токене содержится только ip-адрес. */
+	/* В access токене содержится guid, ip-адрес и время выпуска + jti, который добавляется в token.NewPair;
+	 * В refresh токене содержится только ip-адрес и время выпуска. */
 	pair, err := token.NewPair(service.cfg.Secret, map[string]interface{}{
 		"guid": userGUID,
 		"ip":   req.RemoteAddr,
