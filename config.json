@@ -1,0 +1,11 @@
+{
+  "host": "localhost",
+  "port": 8080,
+  "smtp": {
+    "host": "smtp.mail.ru",
+    "port": 465,
+    "login": "",
+    "password": "",
+    "email": "test@mail.ru"
+  }
+}
