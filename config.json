@@ -1,6 +1,10 @@
 {
   "host": "localhost",
   "port": 8080,
+  "lifetime": {
+    "refresh_token": 604800,
+    "access_token": 86400
+  },
   "smtp": {
     "host": "smtp.mail.ru",
     "port": 465,

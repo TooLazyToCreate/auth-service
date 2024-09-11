@@ -19,10 +19,9 @@ func main() {
 		envMode := os.Getenv("GO_ENV")
 		if envMode == "" {
 			if err := godotenv.Load(workingDir + "/go.env"); err != nil {
-				log.Fatal("Error loading .env file; Error - " + err.Error())
+				log.Fatal("go.env loading failed error - " + err.Error())
 			}
 		}
-		//config.WriteTemplate(workingDir + "/config.json")
 		cfg = config.MustLoad(workingDir + "/config.json")
 	}
 

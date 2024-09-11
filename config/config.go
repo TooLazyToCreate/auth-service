@@ -7,12 +7,16 @@ import (
 )
 
 type Config struct {
+	Env         string `json:"-"`
+	DatabaseDsn string `json:"-"`
+	Secret      []byte `json:"-"`
 	Host        string `json:"host"`
 	Port        int    `json:"port"`
-	Env         string `json:"-"`
-	DatabaseUrl string `json:"-"`
-	Secret      []byte `json:"-"`
-	Smtp        struct {
+	Lifetime    struct {
+		RefreshToken int64 `json:"refresh_token"`
+		AccessToken  int64 `json:"access_token"`
+	} `json:"lifetime"`
+	Smtp struct {
 		Host     string `json:"host"`
 		Port     int    `json:"port"`
 		Login    string `json:"login"`
@@ -32,7 +36,7 @@ func MustLoad(filePath string) *Config {
 		log.Fatal("Config parsing failed with error - " + err.Error())
 	}
 	cfg.Env = os.Getenv("GO_ENV")
-	cfg.DatabaseUrl = os.Getenv("DATABASE_URL")
+	cfg.DatabaseDsn = os.Getenv("DATABASE_DSN")
 	cfg.Secret = []byte(os.Getenv("SECRET"))
 	return cfg
 }

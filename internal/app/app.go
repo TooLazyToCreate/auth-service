@@ -2,26 +2,32 @@ package app
 
 import (
 	"database/sql"
+	"net/http"
+	"net/smtp"
+	"strconv"
+	"strings"
+
 	"github.com/TooLazyToCreate/auth-service/config"
 	"github.com/TooLazyToCreate/auth-service/internal/repository"
 	"github.com/TooLazyToCreate/auth-service/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
-	"net/http"
-	"net/smtp"
-	"strconv"
-	"strings"
 )
 
 func Run(logger *zap.Logger, cfg *config.Config) error {
-	db, err := sql.Open("postgres", cfg.DatabaseUrl)
+	db, err := sql.Open("postgres", cfg.DatabaseDsn)
 	if err != nil {
 		logger.Fatal("Failed to connect to database", zap.Error(err))
 	} else {
 		logger.Info("Connected to database")
 	}
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("Connection to database was closed with error", zap.Error(err))
+		}
+	}()
 
 	userRepo := repository.NewUserRepository(logger, db)
 	tokenRepo := repository.NewTokenRepository(logger, db)

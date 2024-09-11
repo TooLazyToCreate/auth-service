@@ -21,5 +21,5 @@
 **go.env**
 
     GO_ENV="DEV"
-    DATABASE_URL="host=localhost port=5432 user= password= dbname= sslmode=disable"
+    DATABASE_DSN="host=localhost port=5432 user= password= dbname= sslmode=disable"
     SECRET="32-byte sequence. Keep it secret"
