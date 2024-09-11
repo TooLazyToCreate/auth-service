@@ -6,6 +6,7 @@ import (
 
 	"github.com/TooLazyToCreate/auth-service/config"
 	"github.com/TooLazyToCreate/auth-service/internal/app"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
@@ -15,9 +16,12 @@ func main() {
 	if workingDir, err := os.Getwd(); err != nil {
 		log.Fatal("os.Getwd() failed with error - " + err.Error())
 	} else {
-		// if err := godotenv.Load(workingDir + "/go.env"); err != nil {
-		// 	log.Fatal("Error loading .env file; Error - " + err.Error())
-		// }
+		envMode := os.Getenv("GO_ENV")
+		if envMode == "" {
+			if err := godotenv.Load(workingDir + "/go.env"); err != nil {
+				log.Fatal("Error loading .env file; Error - " + err.Error())
+			}
+		}
 		//config.WriteTemplate(workingDir + "/config.json")
 		cfg = config.MustLoad(workingDir + "/config.json")
 	}
