@@ -3,7 +3,8 @@
   "port": 8080,
   "lifetime": {
     "refresh_token": 60,
-    "access_token": 5
+    "access_token": 30,
+    "expired_token_hash": 5
   },
   "smtp": {
     "host": "smtp.mail.ru",

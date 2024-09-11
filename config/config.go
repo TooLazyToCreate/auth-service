@@ -15,6 +15,7 @@ type Config struct {
 	Lifetime    struct {
 		RefreshToken int64 `json:"refresh_token"`
 		AccessToken  int64 `json:"access_token"`
+		ExpiredToken int64 `json:"expired_token_hash"`
 	} `json:"lifetime"`
 	Smtp struct {
 		Host     string `json:"host"`

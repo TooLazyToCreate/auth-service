@@ -35,7 +35,7 @@ func Run(logger *zap.Logger, cfg *config.Config) error {
 	tokenRepo := repository.NewTokenRepository(logger, db)
 
 	/* Запускаем на фоне горутину с очисткой базы токенов раз в 5 секунд*/
-	tokenClearTicker := time.NewTicker(5 * time.Second)
+	tokenClearTicker := time.NewTicker(time.Duration(cfg.Lifetime.ExpiredToken * int64(time.Second)))
 	go func() {
 		for {
 			<-tokenClearTicker.C
@@ -43,7 +43,7 @@ func Run(logger *zap.Logger, cfg *config.Config) error {
 			if !(err == nil || errors.Is(err, sql.ErrNoRows)) {
 				logger.Error("Failed to delete expired tokens", zap.Error(err))
 			} else {
-				logger.Info("Expired tokens have been deleted")
+				logger.Debug("Expired tokens have been deleted")
 			}
 		}
 	}()
