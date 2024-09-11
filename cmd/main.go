@@ -1,11 +1,10 @@
 package main
 
 import (
-	"github.com/TooLazyToCreate/auth-service/config"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 
+	"github.com/TooLazyToCreate/auth-service/config"
 	"github.com/TooLazyToCreate/auth-service/internal/app"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
@@ -16,10 +15,9 @@ func main() {
 	if workingDir, err := os.Getwd(); err != nil {
 		log.Fatal("os.Getwd() failed with error - " + err.Error())
 	} else {
-		/* Раскомментировать при надобности, хотя это могла бы делать система сборки */
-		if err := godotenv.Load(workingDir + "/go.env"); err != nil {
-			log.Fatal("Error loading .env file; Error - " + err.Error())
-		}
+		// if err := godotenv.Load(workingDir + "/go.env"); err != nil {
+		// 	log.Fatal("Error loading .env file; Error - " + err.Error())
+		// }
 		//config.WriteTemplate(workingDir + "/config.json")
 		cfg = config.MustLoad(workingDir + "/config.json")
 	}
@@ -35,6 +33,9 @@ func main() {
 	zapConfig.OutputPaths = []string{"stdout"}      //, "/var/log/" + "auth-service.log"}
 	zapConfig.ErrorOutputPaths = []string{"stderr"} //, "/var/log/" + "auth-service.log"}
 	logger, err := zapConfig.Build()
+	if err != nil {
+		log.Fatal("Failed to setup logger, error - " + err.Error())
+	}
 
 	// TODO глянуть, какие ошибки появляются при обычном закрытии сервера без ошибок в логике
 	if err = app.Run(logger, cfg); err != nil {
